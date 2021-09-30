@@ -156,19 +156,6 @@ void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_s
                     i++;
                 }
 
-                //menor = procuraMenor(v, i);
-                // salva_cliente(v,arq);
-                // maior = chamaProximo(menor,v);
-                // if (maior>menor)
-                //     v[i]=maior;
-                // else{
-                //     congela[i]=maior;
-                //     v[i]=NULL;
-                //     if (!v[M-1])
-                // }
-
-                // }
-
                 if (i < M) // particao de sobra
                 {
                     menor = procuraMenor(v, i);
@@ -193,7 +180,7 @@ void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_s
                 }
                 else if (i == M)
                 {
-                    if (!(cin = le_cliente(arq)))
+                    if (!cin)
                     {
                         menor = procuraMenor(v, i);
                         if (menor != INT_MAX)
@@ -231,11 +218,27 @@ void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_s
                         {
                             i = 0;
                             menor = procuraMenor(v, M);
-                            do
+                            while (menor != INT_MAX)
                             {
-                                if (trava)
-                                    cin = le_cliente(arq);
-                                trava = 1;
+
+                                if (!cin)
+                                {
+                                    while (menor != INT_MAX)
+                                    {
+                                        menor = procuraMenor(v, M);
+                                        if (menor != INT_MAX)
+                                        {
+                                            salva_cliente(v[menor], p);
+                                            v[menor]->cod_cliente = INT_MAX;
+
+                                        }
+                                        else
+                                        {
+                                            fclose(p);
+                                            return;
+                                        }
+                                    }
+                                }
 
                                 if (v[menor]->cod_cliente < cin->cod_cliente)
                                 {
@@ -271,25 +274,20 @@ void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_s
                                             {
                                                 if (menor != INT_MAX)
                                                 {
-                                                    v[ind] = freezer[menor];
+                                                    *v[ind] = *freezer[menor];
                                                     freezer[menor]->cod_cliente = INT_MAX;
                                                     menor = procuraMenor(freezer, M);
                                                 }
-                                                else break;
-                                                for (int x = 0; x < 6; x++)
-                                                {
-                                                printf("%d\n",v[i]->cod_cliente);
-                                                }
-                                                
-                                                printf("O_____O\n");
+                                                else
+                                                    break;
                                             }
                                         }
                                         else
                                             return;
                                     }
                                 }
-
-                            } while (menor != INT_MAX);
+                                menor = procuraMenor(v, M);
+                            }
                         }
 
                         fclose(p);
