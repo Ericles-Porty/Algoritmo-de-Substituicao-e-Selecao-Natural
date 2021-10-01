@@ -12,30 +12,6 @@
 #include "cliente.h"
 #include <stdlib.h>
 
-int procuraMenor(Cliente **v, int M)
-{
-    int pos_menor = 0, cont = 0;
-    Cliente *menor = (Cliente *)malloc(sizeof(Cliente));
-    menor = v[0];
-    for (int i = 0; i < M; i++)
-    {
-        if ((menor->cod_cliente >= v[i]->cod_cliente) && (v[i]->cod_cliente != INT_MAX))
-        {
-            pos_menor = i;
-            menor = v[i];
-        }
-        if (v[i]->cod_cliente == INT_MAX)
-        {
-            cont += 1;
-        }
-        if (cont == M)
-        {
-            return INT_MAX;
-        }
-    }
-    return pos_menor;
-}
-
 void classificacao_interna(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int M)
 {
     int fim = 0; //variável de controle para saber se arquivo de entrada terminou
@@ -109,15 +85,89 @@ void classificacao_interna(char *nome_arquivo_entrada, Nomes *nome_arquivos_said
     }
 }
 
+int procuraMenor(Cliente **v, int M)
+{
+    int pos_menor = 0, cont = 0;
+    Cliente *menor = (Cliente *)malloc(sizeof(Cliente));
+    menor = v[0];
+    for (int i = 0; i < M; i++)
+    {
+        if ((menor->cod_cliente >= v[i]->cod_cliente) && (v[i]->cod_cliente != INT_MAX))
+        {
+            pos_menor = i;
+            menor = v[i];
+        }
+        if (v[i]->cod_cliente == INT_MAX)
+        {
+            cont += 1;
+        }
+        if (cont == M)
+        {
+            return INT_MAX;
+        }
+    }
+    return pos_menor;
+}
+
+void congelado(Cliente **v, Cliente **freezer, Cliente *cin, int menor, FILE *p)
+{
+    salva_cliente(v[menor], p);
+    freezer[menor] = cin;
+    v[menor]->cod_cliente = INT_MAX;
+}
+
+void libera_congelado(Cliente **v, Cliente **freezer, int i, int M)
+{
+    int menor = procuraMenor(freezer, M);
+    for (int ind = 0; ind < M; ind++)
+    {
+        if (menor != INT_MAX)
+        {
+            *v[ind] = *freezer[menor];
+            freezer[menor]->cod_cliente = INT_MAX;
+            menor = procuraMenor(freezer, M);
+        }
+        else
+            break;
+    }
+}
+
+void existe_menor(Cliente **v, int i, FILE *p)
+{
+    int menor = procuraMenor(v, i);
+    while (menor != INT_MAX)
+    {
+        salva_cliente(v[menor], p);
+        v[menor] = cliente(INT_MAX, "");
+        menor = procuraMenor(v, i);
+    }
+}
+
+void cria_particao(char *nome_particao, Nomes *nome_arquivos_saida, Cliente **v, FILE *p, int requisita_funcao, int menor, int i)
+{
+    if ((p = fopen(nome_particao, "wb")) == NULL)
+    {
+        printf("Erro criar arquivo de saida\n");
+    }
+    else{
+        if(requisita_funcao == 1)
+            existe_menor(v, i, p);
+
+        fclose(p);
+    }
+}
+
 void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int M)
 {
-    Cliente *temp;
-    Cliente *freezer[M];
-    int trava = 0;
-    int menor = 0, cont = 0;
-    int fim = 0; //variável de controle para saber se arquivo de entrada terminou
-    FILE *arq;   //declara ponteiro para arquivo
+    Cliente *cin;
+    Cliente *freezer[M], *v[M];
+    int menor = 0;
+    int fim = 0, i = 0; //variável de controle para saber se arquivo de entrada terminou
+    FILE *arq, *p;   //declara ponteiro para arquivo
 
+    char *nome_particao = nome_arquivos_saida->nome;
+    nome_arquivos_saida = nome_arquivos_saida->prox;
+    
     //abre arquivo para leitura
     if ((arq = fopen(nome_arquivo_entrada, "rb")) == NULL)
     {
@@ -126,28 +176,18 @@ void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_s
     else
     {
         //le primeiro cliente
-        Cliente *cin = le_cliente(arq);
+        cin = le_cliente(arq);
         //se tentou ler o arquivo e não tinha nenhum dado dentro dele, cria um arquivo vazio
         if (!cin)
         {
-            char *nome_particao = nome_arquivos_saida->nome;
-            nome_arquivos_saida = nome_arquivos_saida->prox;
-
-            FILE *p;
-            if ((p = fopen(nome_particao, "wb")) == NULL)
-            {
-                printf("Erro criar arquivo de saida\n");
-            }
-            else
-                fclose(p);
+            cria_particao(nome_particao, nome_arquivos_saida, v, p, 0, 0, 0);
         }
         //se tinha algum elemento
         else
         {
             while (!(fim))
             {
-                Cliente *v[M];
-                int i = 0;
+                i = 0;
                 //tenta ler o maximo de dados possiveis para a memória
                 while (!feof(arq) && i < M)
                 {
@@ -158,151 +198,72 @@ void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_s
 
                 if (i < M) // particao de sobra
                 {
-                    menor = procuraMenor(v, i);
-
-                    char *nome_particao = nome_arquivos_saida->nome;
-                    nome_arquivos_saida = nome_arquivos_saida->prox;
-
-                    FILE *p;
-                    if (!(p = fopen(nome_particao, "wb")))
-                        printf("Erro criar arquivo de saida\n");
-                    else
-                    {
-                        while (menor != INT_MAX)
-                        {
-                            salva_cliente(v[menor], p);
-                            v[menor]->cod_cliente = INT_MAX;
-                            menor = procuraMenor(v, i);
-                        }
-                        fclose(p);
-                        return;
-                    }
+                    cria_particao(nome_particao, nome_arquivos_saida, v, p, 1, 0, i);
+                    return;
                 }
                 else if (i == M)
                 {
                     if (!cin)
                     {
-                        menor = procuraMenor(v, i);
-                        if (menor != INT_MAX)
+                        cria_particao(nome_particao, nome_arquivos_saida, v, p, 1, 0, i);
+                        return;
+                    }
+                   
+                    // Parte do congelamento
+                    if (!(p = fopen(nome_particao, "wb")))
+                        printf("Erro criar arquivo de saida\n");
+                    else {
+                        i = 0;
+                        menor = procuraMenor(v, M);
+                        while (menor != INT_MAX)
                         {
-                            char *nome_particao = nome_arquivos_saida->nome;
-                            nome_arquivos_saida = nome_arquivos_saida->prox;
-
-                            FILE *p;
-                            if ((p = fopen(nome_particao, "wb")) == NULL)
-                            {
-                                printf("Erro criar arquivo de saida\n");
-                            }
-                            else
-                            {
-                                while ((menor != INT_MAX))
-                                {
-                                    salva_cliente(v[menor], p);
-                                    v[menor]->cod_cliente = INT_MAX;
-                                    menor = procuraMenor(v, i);
-                                }
+                            if (!cin) {
+                                existe_menor(v, M, p);
                                 fclose(p);
                                 return;
                             }
-                        }
-                    }
-                    else
-                    {
-                        char *nome_particao = nome_arquivos_saida->nome;
-                        nome_arquivos_saida = nome_arquivos_saida->prox;
-                        // Parte do congelamento
-                        FILE *p;
-                        if (!(p = fopen(nome_particao, "wb")))
-                            printf("Erro criar arquivo de saida\n");
-                        else
-                        {
-                            i = 0;
+    
+                            if (v[menor]->cod_cliente < cin->cod_cliente) {
+                                salva_cliente(v[menor], p);
+                                v[menor] = cin;
+                            }
+                            else {
+                                i++;
+                                congelado(v, freezer, cin, menor, p);
+                            }
                             menor = procuraMenor(v, M);
-                            while (menor != INT_MAX)
-                            {
+                            cin = le_cliente(arq);
+                            if (menor == INT_MAX) {
+                                fclose(p);
+                                
+                                char *nome_particao = nome_arquivos_saida->nome;
+                                nome_arquivos_saida = nome_arquivos_saida->prox;
 
-                                if (!cin)
-                                {
-                                    while (menor != INT_MAX)
-                                    {
-                                        menor = procuraMenor(v, M);
-                                        if (menor != INT_MAX)
-                                        {
-                                            salva_cliente(v[menor], p);
-                                            v[menor]->cod_cliente = INT_MAX;
-
-                                        }
-                                        else
-                                        {
-                                            fclose(p);
-                                            return;
-                                        }
-                                    }
-                                }
-
-                                if (v[menor]->cod_cliente < cin->cod_cliente)
-                                {
-                                    salva_cliente(v[menor], p);
-                                    v[menor] = cin;
-                                }
+                                if (!(p = fopen(nome_particao, "wb")))
+                                    printf("Erro criar arquivo de saida\n");
                                 else
                                 {
-                                    i++;
-                                    salva_cliente(v[menor], p);
-                                    freezer[menor] = cin;
-                                    v[menor]->cod_cliente = INT_MAX;
-                                }
-                                menor = procuraMenor(v, M);
-                                cin = le_cliente(arq);
-                                if (menor == INT_MAX)
-                                {
-                                    fclose(p);
-
-                                    char *nome_particao = nome_arquivos_saida->nome;
-                                    nome_arquivos_saida = nome_arquivos_saida->prox;
-
-                                    FILE *p;
-
-                                    if (!(p = fopen(nome_particao, "wb")))
-                                        printf("Erro criar arquivo de saida\n");
-                                    else
-                                    {
-                                        if (i != 0)
-                                        {
-                                            menor = procuraMenor(freezer, M);
-                                            for (int ind = 0; ind < M; ind++)
-                                            {
-                                                if (menor != INT_MAX)
-                                                {
-                                                    *v[ind] = *freezer[menor];
-                                                    freezer[menor]->cod_cliente = INT_MAX;
-                                                    menor = procuraMenor(freezer, M);
-                                                }
-                                                else
-                                                    break;
-                                            }
-                                        }
-                                        else
-                                            return;
+                                    if (i != 0)
+                                        libera_congelado(v, freezer, i, M);
+                                    else {
+                                        fclose(p);
+                                        return;
                                     }
                                 }
-                                menor = procuraMenor(v, M);
                             }
+                            menor = procuraMenor(v, M);
                         }
-
                         fclose(p);
                     }
                 }
+                if (feof(arq)) {
+                    fim = 1;
+                }
             }
 
-            if (feof(arq))
-            {
-                fim = 1;
-            }
         }
+        fclose(arq);
     }
-
-    fclose(arq);
     //TODO: Inserir aqui o codigo do algoritmo de geracao de particoes
 }
 
