@@ -97,9 +97,10 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
         /* se o primeiro cliente e nulo, a lista esta vazia */
         if(cin == NULL){
             //passa no teste 1
-            fopen(nome_particao, "wb");
+            FILE *p = fopen(nome_particao, "wb");
+            fclose(p);
         }else{
-            while(!fim){
+
 
                 /* memoria para guardar M valores */
                 Cliente *memoria[M];
@@ -111,7 +112,7 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
                 int i = 0;
                 while (!feof(arq) && i < M) {
                     memoria[i] = cin;
-                    cin = le_cliente(arq); // em cin fica o 7 cliente
+                    cin = le_cliente(arq); // em cin fica o setimo cliente
                     i++;
                 }
 
@@ -123,20 +124,11 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
                 if(prox != NULL){
                     FILE *reservatorio;
                     FILE *p;
-                    while(prox != NULL){
+                    while(nome_arquivos_saida){
                             reservatorio = fopen("Reservatorio.dat", "wb");
+
                             p = fopen(nome_particao, "wb");
-                            //printf("\n%s",nome_particao); // esse printf mostra o nome dos arquivos
-                            /*
-                            if(part == 1)
-                                p = fopen("p1.dat", "wb");
-                            else if(part == 2)
-                                p = fopen("p2.dat", "wb");
-                            else if(part == 3)
-                                p = fopen("p3.dat", "wb");
-                            else if(part == 4)
-                                p = fopen("p4.dat", "wb");
-                            */
+
                         while(n != 0){
                             menor = memoria[0];
                             indiceMenor = 0;
@@ -148,31 +140,18 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
                                         indiceMenor = i;
                                     }
                             }
-
-                            //printf("\n--- %d - %s ---",memoria[indiceMenor]->cod_cliente, memoria[indiceMenor]->nome);
                             if(memoria[indiceMenor]->cod_cliente > prox->cod_cliente){
-
-                                //printf("\nReserva --- %d - %s ---",prox->cod_cliente, prox->nome);
                                 salva_cliente(prox,reservatorio);
                                 n--;
                             }else{
                                 salva_cliente(memoria[indiceMenor],p);
-                                printf("\n--- %d - %s ---",memoria[indiceMenor]->cod_cliente, memoria[indiceMenor]->nome);
 
                                 memoria[indiceMenor] = prox;
-                                //printf("\nTrocou --- %d - %s ---",memoria[indiceMenor]->cod_cliente, memoria[indiceMenor]->nome);
-                                //printf("\nNovoMenor --- %d - %s ---",memoria[indiceMenor]->cod_cliente, memoria[indiceMenor]->nome);
                             }
-                            //printf("\nProx --- %d - %s ---",prox->cod_cliente, prox->nome);
-                            prox = le_cliente(arq);
-                            if(prox == NULL){
-                                //M = M - n;
 
-                                n = 0;
-                            }
+                            prox = le_cliente(arq);
                         }
                         fclose(reservatorio);
-
                         for (int j = 1; j < M; j++) {
                                         Cliente *c = memoria[j];
                                         i = j - 1;
@@ -184,38 +163,28 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
                                     }
                                     //salva no .dat
                                         for (int i = 0; i < M; i++) {
-                                            printf("\n--- %d - %s ---",memoria[i]->cod_cliente, memoria[i]->nome);
+                                            //printf("\n--- %d - %s ---",memoria[i]->cod_cliente, memoria[i]->nome);
                                             salva_cliente(memoria[i], p);
                                         }
-                                        printf("\n");
-                                        fclose(p);
+                                        //printf("\n");
+                        fclose(p);
 
                         FILE* reserva = fopen("Reservatorio.dat", "rb");
                         int i = 0;
                         while (!feof(reserva) && i < M) {
                             memoria[i] = le_cliente(reserva); // ler os 6 clientes do reservatorio
-                            if(memoria[i] == NULL)
-                                break;
-                            //printf("\nAqui %d --- %d - %s ---",i,memoria[i]->cod_cliente, memoria[i]->nome);
-                            // descomentar esse printf, vai forca o erro, se descomentar junto com o if ele roda normal
                             i++;
                             n++;
                         }
-                        if (i != M) {
-                            M = i;
-                        }
-                        fclose(reserva);
-                        if(nome_arquivos_saida != NULL)
-                            nome_particao = nome_arquivos_saida->nome;
-                        if(nome_arquivos_saida->prox != NULL)
-                            nome_arquivos_saida = nome_arquivos_saida->prox;
 
+                        fclose(reserva);
+
+                            nome_particao = nome_arquivos_saida->nome;
+
+                            nome_arquivos_saida = nome_arquivos_saida->prox;
 
                     }
                 }
-                        // aqui Thiago
-                        // caso menor seja nulo, basta apenas orderar a memoria e salvar
-                        //faz ordenacao
 
                             for (int j = 1; j < M; j++) {
                                         Cliente *c = memoria[j];
@@ -235,16 +204,19 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
                                 for (int i = 0; i < M; i++) {
                                     salva_cliente(memoria[i], p);
                                 }
-
+                                /* se o proximo for diferente de null significa que e sobra, pois
+                                o reservatorio ficou cheio antes dele ser gravado de arquivo e sera salvo
+                                */
+                                if(prox != NULL){
+                                salva_cliente(prox,p);
+                                }
                                 fclose(p);
 
 
-
-                //printf("\nAqui --- %d - %s ---",memoria[indiceMenor]->cod_cliente, memoria[indiceMenor]->nome);
-                fim = 1;
-            }
-
         }
+        /* exclui o reservatorio */
+        remove("Reservatorio.dat");
     }
+    fclose(arq);
 }
 
