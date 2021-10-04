@@ -5,7 +5,7 @@
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
 #endif
-
+#define INT_MAX 2147483647
 #include <stdio.h>
 #include "geracao_particoes.h"
 #include "nomes.h"
@@ -100,8 +100,6 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
             FILE *p = fopen(nome_particao, "wb");
             fclose(p);
         }else{
-
-
                 /* memoria para guardar M valores */
                 Cliente *memoria[M];
                 Cliente *menor; // auxiliar para encotnrar o menor cliente na memoria
@@ -126,9 +124,7 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
                     FILE *p;
                     while(nome_arquivos_saida){
                             reservatorio = fopen("Reservatorio.dat", "wb");
-
                             p = fopen(nome_particao, "wb");
-
                         while(n != 0){
                             menor = memoria[0];
                             indiceMenor = 0;
@@ -140,37 +136,46 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
                                         indiceMenor = i;
                                     }
                             }
+                            /* caso o proximoseja menor que o atual menor na memoria, o prox
+                            ira para o reservatorio */
                             if(memoria[indiceMenor]->cod_cliente > prox->cod_cliente){
                                 salva_cliente(prox,reservatorio);
+                                /* enquanto o n for maior que 0, significa que o reservatorio
+                                ainda nao esta cheio */
                                 n--;
-                            }else{
+                            }
+                            /* caso contrario, o menor sera salvo na memoria, e o prox ficara
+                            em seu lugar na mesma posicao de memoria(indeiceMenor) */
+                            else{
                                 salva_cliente(memoria[indiceMenor],p);
-
                                 memoria[indiceMenor] = prox;
                             }
 
                             prox = le_cliente(arq);
                         }
                         fclose(reservatorio);
-                        for (int j = 1; j < M; j++) {
-                                        Cliente *c = memoria[j];
-                                        i = j - 1;
-                                        while ((i >= 0) && (memoria[i]->cod_cliente > c->cod_cliente)) {
-                                            memoria[i + 1] = memoria[i];
-                                            i = i - 1;
-                                        }
-                                        memoria[i + 1] = c;
-                                    }
-                                    //salva no .dat
-                                        for (int i = 0; i < M; i++) {
-                                            //printf("\n--- %d - %s ---",memoria[i]->cod_cliente, memoria[i]->nome);
-                                            salva_cliente(memoria[i], p);
-                                        }
-                                        //printf("\n");
+                        /* encontra o menores valores na memoria e salva na particao */
+                        menor = memoria[0];
+                        indiceMenor = 0;
+                        int repete = M;
+                        while(repete){
+                            for(int i = 0; i<M; i++){
+                                if(memoria[i]->cod_cliente < menor->cod_cliente){
+                                        menor = memoria[i];
+                                        indiceMenor = i;
+                                }
+                            }
+
+                                salva_cliente(memoria[indiceMenor],p);
+                                memoria[indiceMenor]->cod_cliente = INT_MAX;
+                                repete--;
+                            }
+
                         fclose(p);
 
                         FILE* reserva = fopen("Reservatorio.dat", "rb");
                         int i = 0;
+                        /* ler todo o conteudo do reservaotiro */
                         while (!feof(reserva) && i < M) {
                             memoria[i] = le_cliente(reserva); // ler os 6 clientes do reservatorio
                             i++;
@@ -178,39 +183,36 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
                         }
 
                         fclose(reserva);
-
-                            nome_particao = nome_arquivos_saida->nome;
-
-                            nome_arquivos_saida = nome_arquivos_saida->prox;
+                        /* troca o nome para a proxima particao ex p1.dat para p2.dat */
+                        nome_particao = nome_arquivos_saida->nome;
+                        nome_arquivos_saida = nome_arquivos_saida->prox;
 
                     }
                 }
 
-                            for (int j = 1; j < M; j++) {
-                                        Cliente *c = memoria[j];
-                                        i = j - 1;
-                                        while ((i >= 0) && (memoria[i]->cod_cliente > c->cod_cliente)) {
-                                            memoria[i + 1] = memoria[i];
-                                            i = i - 1;
-                                        }
-                                        memoria[i + 1] = c;
-                                    }
-                            //salva no .dat
-                            FILE *p;
+                FILE *p = fopen(nome_particao, "wb");
 
-                                p = fopen(nome_particao, "wb");
-
-
-                                for (int i = 0; i < M; i++) {
-                                    salva_cliente(memoria[i], p);
-                                }
-                                /* se o proximo for diferente de null significa que e sobra, pois
-                                o reservatorio ficou cheio antes dele ser gravado de arquivo e sera salvo
-                                */
-                                if(prox != NULL){
-                                salva_cliente(prox,p);
-                                }
-                                fclose(p);
+                /* encontra o menor valor na memoria */
+                menor = memoria[0];
+                indiceMenor = 0;
+                int repete = M;
+                while(repete){
+                for(int i = 0; i<M; i++){
+                    if(memoria[i]->cod_cliente < menor->cod_cliente){
+                        menor = memoria[i];
+                        indiceMenor = i;
+                    }
+                }
+                salva_cliente(memoria[indiceMenor],p);
+                memoria[indiceMenor]->cod_cliente = INT_MAX;
+                repete--;
+            }
+            /* se o proximo for diferente de null significa que e sobra, pois
+            o reservatorio ficou cheio antes dele ser gravado de arquivo e sera salvo */
+            if(prox != NULL){
+                salva_cliente(prox,p);
+            }
+            fclose(p);
 
 
         }
