@@ -279,22 +279,19 @@ void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_s
 
 void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int M, int n)
 {
-    FILE *arq;   //declara ponteiro para arquivo
-    
+    FILE *arq; //declara ponteiro para arquivo
+
     /* nome_particao = nome do arquivo de saida ex: "p1.dat","p2.dat" */
     char *nome_particao = nome_arquivos_saida->nome;
     nome_arquivos_saida = nome_arquivos_saida->prox;
 
     //abre arquivo para leitura
-    if ((arq = fopen(nome_arquivo_entrada, "rb")) == NULL)
-    {
+    if (!(arq = fopen(nome_arquivo_entrada, "rb")))
         printf("Erro ao abrir arquivo de entrada\n");
-    }
     else
     {
-        //le primeiro cliente
         Cliente *cin = le_cliente(arq);
-        /* se o primeiro cliente e nulo, a lista esta vazia */
+        //se o primeiro cliente e nulo, a lista esta vazia 
         if (!cin)
         {
             FILE *p = fopen(nome_particao, "wb");
@@ -302,12 +299,12 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
         }
         else
         {
-            /* memoria para guardar M valores */
+            //memoria para guardar M valores
             Cliente *v[M];
             Cliente *menor; // auxiliar para encotnrar o menor cliente na memoria
             Cliente *prox;  // guarda o proximo cliente lido appos o 6 da memoria
             int indiceMenor;
-            /* ler os M valores do arquivo e guarda na memoria */
+            // ler os M valores do arquivo e guarda na memoria
             int i = 0;
             while (!feof(arq) && i < M)
             {
@@ -321,7 +318,7 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
                 M = i;
 
             prox = cin;
-            
+
             if (prox)
             {
                 FILE *reservatorio;
@@ -354,7 +351,7 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
 
                         prox = le_cliente(arq);
                     }
-                    
+
                     fclose(reservatorio);
 
                     guarda_no_arquivo(v, M, p);
@@ -364,7 +361,7 @@ void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int
                     reservatorio = fopen("Reservatorio.dat", "rb");
                     i = 0;
 
-                    //ler todo o conteudo do reservaotiro 
+                    //ler todo o conteudo do reservaotiro
                     while (!feof(reservatorio) && i < M)
                     {
                         v[i] = le_cliente(reservatorio); //ler os 6 clientes do reservatorio
