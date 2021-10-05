@@ -85,6 +85,7 @@ void classificacao_interna(char *nome_arquivo_entrada, Nomes *nome_arquivos_said
     }
 }
 
+//Retorna o indice do menor valor no vetor da memoria
 int procuraMenor(Cliente **v, int M)
 {
     int pos_menor = 0, cont = 0;
@@ -109,6 +110,7 @@ int procuraMenor(Cliente **v, int M)
     return pos_menor;
 }
 
+//Guarda no arquivo o que tem no vetor antes de ler o proximo valor que vai pro freezer
 void congelado(Cliente **v, Cliente **freezer, Cliente *cin, int menor, FILE *p)
 {
     salva_cliente(v[menor], p);
@@ -116,6 +118,7 @@ void congelado(Cliente **v, Cliente **freezer, Cliente *cin, int menor, FILE *p)
     v[menor]->cod_cliente = INT_MAX;
 }
 
+//Move para o vetor todos elementos do freezer ordenadamente
 void libera_congelado(Cliente **v, Cliente **freezer, int i, int M)
 {
     int menor = procuraMenor(freezer, M);
@@ -132,7 +135,8 @@ void libera_congelado(Cliente **v, Cliente **freezer, int i, int M)
     }
 }
 
-void existe_menor(Cliente **v, int i, FILE *p)
+//Guarda no arquvio os dados do vetor e o zera
+void guarda_no_arquivo(Cliente **v, int i, FILE *p)
 {
     int menor = procuraMenor(v, i);
     while (menor != INT_MAX)
@@ -149,9 +153,10 @@ void cria_particao(char *nome_particao, Nomes *nome_arquivos_saida, Cliente **v,
     {
         printf("Erro criar arquivo de saida\n");
     }
-    else{
-        if(requisita_funcao == 1)
-            existe_menor(v, i, p);
+    else
+    {
+        if (requisita_funcao == 1)
+            guarda_no_arquivo(v, i, p);
 
         fclose(p);
     }
@@ -163,11 +168,11 @@ void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_s
     Cliente *freezer[M], *v[M];
     int menor = 0;
     int fim = 0, i = 0; //variável de controle para saber se arquivo de entrada terminou
-    FILE *arq, *p;   //declara ponteiro para arquivo
+    FILE *arq, *p;      //declara ponteiro para arquivo
 
     char *nome_particao = nome_arquivos_saida->nome;
     nome_arquivos_saida = nome_arquivos_saida->prox;
-    
+
     //abre arquivo para leitura
     if ((arq = fopen(nome_arquivo_entrada, "rb")) == NULL)
     {
@@ -196,46 +201,51 @@ void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_s
                     i++;
                 }
 
-                if (i < M) // particao de sobra
+                if (i < M) // Se a quantidade de clientes for menor que a capacidade do vetor, salva os elementos e fecha o arquivo
                 {
                     cria_particao(nome_particao, nome_arquivos_saida, v, p, 1, 0, i);
                     return;
                 }
-                else if (i == M)
+                else if (i == M) //Se a quantidade de clientes for igual ao tamanho da capacidade vai verificar se ainda existe outros elementos
                 {
-                    if (!cin)
+                    if (!cin) //Se não existir é so guardar no arquivo os elementos do vetor e fechar
                     {
                         cria_particao(nome_particao, nome_arquivos_saida, v, p, 1, 0, i);
                         return;
                     }
-                   
-                    // Parte do congelamento
+
+                    // Se existe mais clientes do que a capacidade do vetor vai usar o freezer
                     if (!(p = fopen(nome_particao, "wb")))
                         printf("Erro criar arquivo de saida\n");
-                    else {
+                    else
+                    {
                         i = 0;
                         menor = procuraMenor(v, M);
                         while (menor != INT_MAX)
                         {
-                            if (!cin) {
-                                existe_menor(v, M, p);
+                            if (!cin)
+                            {
+                                guarda_no_arquivo(v, M, p);
                                 fclose(p);
                                 return;
                             }
-    
-                            if (v[menor]->cod_cliente < cin->cod_cliente) {
+
+                            if (v[menor]->cod_cliente < cin->cod_cliente)
+                            {
                                 salva_cliente(v[menor], p);
                                 v[menor] = cin;
                             }
-                            else {
+                            else
+                            {
                                 i++;
                                 congelado(v, freezer, cin, menor, p);
                             }
                             menor = procuraMenor(v, M);
                             cin = le_cliente(arq);
-                            if (menor == INT_MAX) {
+                            if (menor == INT_MAX)
+                            {
                                 fclose(p);
-                                
+
                                 char *nome_particao = nome_arquivos_saida->nome;
                                 nome_arquivos_saida = nome_arquivos_saida->prox;
 
@@ -245,7 +255,8 @@ void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_s
                                 {
                                     if (i != 0)
                                         libera_congelado(v, freezer, i, M);
-                                    else {
+                                    else
+                                    {
                                         fclose(p);
                                         return;
                                     }
@@ -256,158 +267,131 @@ void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_s
                         fclose(p);
                     }
                 }
-                if (feof(arq)) {
+                if (feof(arq))
+                {
                     fim = 1;
                 }
             }
-
         }
         fclose(arq);
     }
-    //TODO: Inserir aqui o codigo do algoritmo de geracao de particoes
 }
 
 void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int M, int n)
 {
-	int fim = 0; //variável de controle para saber se arquivo de entrada terminou
-    FILE *arq; //declara ponteiro para arquivo
+    int fim = 0; //variável de controle para saber se arquivo de entrada terminou
+    FILE *arq;   //declara ponteiro para arquivo
     /* nome_particao = nome do arquivo de saida ex: "p1.dat","p2.dat" */
     char *nome_particao = nome_arquivos_saida->nome;
+    nome_arquivos_saida = nome_arquivos_saida->prox;
 
-
-        nome_particao = nome_arquivos_saida->nome;
-        nome_arquivos_saida = nome_arquivos_saida->prox;
-
-    int contParti = 0; // conta quantos clientes ja foram salvos por particoes
     //abre arquivo para leitura
-    if ((arq = fopen(nome_arquivo_entrada, "rb")) == NULL) {
+    if ((arq = fopen(nome_arquivo_entrada, "rb")) == NULL)
+    {
         printf("Erro ao abrir arquivo de entrada\n");
-    } else {
+    }
+    else
+    {
         //le primeiro cliente
         Cliente *cin = le_cliente(arq);
         /* se o primeiro cliente e nulo, a lista esta vazia */
-        if(cin == NULL){
-            //passa no teste 1
+        if (!cin)
+        {
             FILE *p = fopen(nome_particao, "wb");
             fclose(p);
-        }else{
-                /* memoria para guardar M valores */
-                Cliente *memoria[M];
-                Cliente *menor; // auxiliar para encotnrar o menor cliente na memoria
-                Cliente *prox; // guarda o proximo cliente lido appos o 6 da memoria
-                int indiceMenor;
-                int part = 1;
-                /* ler os M valores do arquivo e guarda na memoria */
-                int i = 0;
-                while (!feof(arq) && i < M) {
-                    memoria[i] = cin;
-                    cin = le_cliente(arq); // em cin fica o setimo cliente
-                    i++;
-                }
-
-                //ajusta tamanho M caso arquivo de entrada tenha terminado antes do vetor
-                if (i != M) {
-                    M = i;
-                }
-                prox = cin;
-                if(prox != NULL){
-                    FILE *reservatorio;
-                    FILE *p;
-                    while(nome_arquivos_saida){
-                            reservatorio = fopen("Reservatorio.dat", "wb");
-                            p = fopen(nome_particao, "wb");
-                        while(n != 0){
-                            menor = memoria[0];
-                            indiceMenor = 0;
-                            // encontra o menor valor na memoria
-                            int i;
-                            for(i = 0; i<M; i++){
-                                if(memoria[i]->cod_cliente < menor->cod_cliente){
-                                        menor = memoria[i];
-                                        indiceMenor = i;
-                                    }
-                            }
-                            /* caso o proximoseja menor que o atual menor na memoria, o prox
-                            ira para o reservatorio */
-                            if(memoria[indiceMenor]->cod_cliente > prox->cod_cliente){
-                                salva_cliente(prox,reservatorio);
-                                /* enquanto o n for maior que 0, significa que o reservatorio
-                                ainda nao esta cheio */
-                                n--;
-                            }
-                            /* caso contrario, o menor sera salvo na memoria, e o prox ficara
-                            em seu lugar na mesma posicao de memoria(indeiceMenor) */
-                            else{
-                                salva_cliente(memoria[indiceMenor],p);
-                                memoria[indiceMenor] = prox;
-                            }
-
-                            prox = le_cliente(arq);
-                        }
-                        fclose(reservatorio);
-                        /* encontra o menores valores na memoria e salva na particao */
-                        menor = memoria[0];
-                        indiceMenor = 0;
-                        int repete = M;
-                        while(repete){
-                            for(int i = 0; i<M; i++){
-                                if(memoria[i]->cod_cliente < menor->cod_cliente){
-                                        menor = memoria[i];
-                                        indiceMenor = i;
-                                }
-                            }
-
-                                salva_cliente(memoria[indiceMenor],p);
-                                memoria[indiceMenor]->cod_cliente = INT_MAX;
-                                repete--;
-                            }
-
-                        fclose(p);
-
-                        FILE* reserva = fopen("Reservatorio.dat", "rb");
-                        int i = 0;
-                        /* ler todo o conteudo do reservaotiro */
-                        while (!feof(reserva) && i < M) {
-                            memoria[i] = le_cliente(reserva); // ler os 6 clientes do reservatorio
-                            i++;
-                            n++;
-                        }
-
-                        fclose(reserva);
-                        /* troca o nome para a proxima particao ex p1.dat para p2.dat */
-                        nome_particao = nome_arquivos_saida->nome;
-                        nome_arquivos_saida = nome_arquivos_saida->prox;
-
-                    }
-                }
-
-                FILE *p = fopen(nome_particao, "wb");
-
-                /* encontra o menor valor na memoria */
-                menor = memoria[0];
-                indiceMenor = 0;
-                int repete = M;
-                while(repete){
-                for(int i = 0; i<M; i++){
-                    if(memoria[i]->cod_cliente < menor->cod_cliente){
-                        menor = memoria[i];
-                        indiceMenor = i;
-                    }
-                }
-                salva_cliente(memoria[indiceMenor],p);
-                memoria[indiceMenor]->cod_cliente = INT_MAX;
-                repete--;
+        }
+        else
+        {
+            /* memoria para guardar M valores */
+            Cliente *v[M];
+            Cliente *menor; // auxiliar para encotnrar o menor cliente na memoria
+            Cliente *prox;  // guarda o proximo cliente lido appos o 6 da memoria
+            int indiceMenor;
+            /* ler os M valores do arquivo e guarda na memoria */
+            int i = 0;
+            while (!feof(arq) && i < M)
+            {
+                v[i] = cin;
+                cin = le_cliente(arq); // em cin fica o setimo cliente
+                i++;
             }
-            /* se o proximo for diferente de null significa que e sobra, pois
-            o reservatorio ficou cheio antes dele ser gravado de arquivo e sera salvo */
-            if(prox != NULL){
-                salva_cliente(prox,p);
+
+            //ajusta tamanho M caso arquivo de entrada tenha terminado antes do vetor
+            if (i != M)
+                M = i;
+
+            prox = cin;
+            
+            if (prox)
+            {
+                FILE *reservatorio;
+                FILE *p;
+                while (nome_arquivos_saida)
+                {
+                    reservatorio = fopen("Reservatorio.dat", "wb");
+                    p = fopen(nome_particao, "wb");
+                    //enquanto o n for maior que 0, significa que o reservatorio
+                    //ainda nao esta cheio
+                    while (n != 0)
+                    {
+                        indiceMenor = procuraMenor(v, M);
+                        menor = v[indiceMenor];
+
+                        //caso o proximo seja menor que o atual menor na memoria, o prox
+                        //ira para o reservatorio
+                        if (v[indiceMenor]->cod_cliente > prox->cod_cliente)
+                        {
+                            salva_cliente(prox, reservatorio);
+                            n--;
+                        }
+                        //caso contrario, o menor sera salvo na memoria, e o prox ficara
+                        //em seu lugar na mesma posicao de memoria(indeiceMenor)
+                        else
+                        {
+                            salva_cliente(v[indiceMenor], p);
+                            v[indiceMenor] = prox;
+                        }
+
+                        prox = le_cliente(arq);
+                    }
+                    
+                    fclose(reservatorio);
+
+                    guarda_no_arquivo(v, M, p);
+
+                    fclose(p);
+
+                    reservatorio = fopen("Reservatorio.dat", "rb");
+                    i = 0;
+
+                    //ler todo o conteudo do reservaotiro 
+                    while (!feof(reservatorio) && i < M)
+                    {
+                        v[i] = le_cliente(reservatorio); //ler os 6 clientes do reservatorio
+                        i++;
+                        n++;
+                    }
+
+                    fclose(reservatorio);
+
+                    nome_particao = nome_arquivos_saida->nome;
+                    nome_arquivos_saida = nome_arquivos_saida->prox;
+                }
+            }
+
+            FILE *p = fopen(nome_particao, "wb");
+
+            guarda_no_arquivo(v, M, p);
+
+            //se o proximo for diferente de null significa que e sobra, pois
+            //o reservatorio ficou cheio antes dele ser gravado de arquivo e sera salvo
+            if (prox != NULL)
+            {
+                salva_cliente(prox, p);
             }
             fclose(p);
-
-
         }
-        /* exclui o reservatorio */
+        //exclui o reservatorio
         remove("Reservatorio.dat");
     }
     fclose(arq);
