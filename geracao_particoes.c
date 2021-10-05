@@ -279,8 +279,8 @@ void selecao_com_substituicao(char *nome_arquivo_entrada, Nomes *nome_arquivos_s
 
 void selecao_natural(char *nome_arquivo_entrada, Nomes *nome_arquivos_saida, int M, int n)
 {
-    int fim = 0; //variável de controle para saber se arquivo de entrada terminou
     FILE *arq;   //declara ponteiro para arquivo
+    
     /* nome_particao = nome do arquivo de saida ex: "p1.dat","p2.dat" */
     char *nome_particao = nome_arquivos_saida->nome;
     nome_arquivos_saida = nome_arquivos_saida->prox;
